@@ -1,5 +1,6 @@
 package wysiwyg;
 
+import cargarFuentes.cargarFuentes;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -17,16 +18,27 @@ import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.rtf.RTFEditorKit;
+import open.abrir;
+import save.guardar;
+import selectColor.selectColor;
 
 /**
  *
  * @author manuel.vargas
  */
-public class vista extends javax.swing.JFrame {
+public final class vista extends javax.swing.JFrame {
 
+    /*Objts*/
     Color selectColor = null;
+
+    /*Clases*/
+    guardar guar = new guardar();
+    abrir abr = new abrir();
+    selectColor sc = new selectColor();
+    cargarFuentes cf = new cargarFuentes();
 
     /**
      * Creates new form vista
@@ -34,16 +46,10 @@ public class vista extends javax.swing.JFrame {
     public vista() {
         initComponents();
         cerrar();
-        loadFont();
-    }
+        cf.loadFont(jcbFont);
 
-    private void loadFont() {
-        GraphicsEnvironment gEnv = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        // get all font name&amp;amp;amp;amp;nbsp;
-        String[] fontNames = gEnv.getAvailableFontFamilyNames();
-        // load to combobox
-        ComboBoxModel model = new DefaultComboBoxModel(fontNames);
-        jcbFont.setModel(model);
+        this.setLocationRelativeTo(null);
+        this.setTitle("Editor de texto");
     }
 
     public void cerrar() {
@@ -56,42 +62,25 @@ public class vista extends javax.swing.JFrame {
     }
 
     public void validarCierre() {
+        if (abr.getNombreArchivo() != null) {
 
+            System.out.println("Archivo abierto");
+        } else {
+
+            System.out.println("Archivo nuevo");
+
+        }
         if (jTextPane1.getText().length() > 0) {
             int resp;
-
             resp = JOptionPane.showConfirmDialog(rootPane, "¿DESEA GUARDAR EL ARCHIVO?", "NO SE HA GUARDADO EL ARCHIVO", JOptionPane.INFORMATION_MESSAGE);
-
             if (resp == JOptionPane.YES_OPTION) {
-                guardar();
-            }
-        }
-    }
 
-    private void guardar() {
-        JFileChooser file = new JFileChooser();
-        String fileName = "";
-        // show save file dialog
-        if (file.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            // get full path of selected file
-            fileName = file.getSelectedFile().getAbsolutePath();
-            // get meta of text
-            StyledDocument doc = (StyledDocument) jTextPane1.getDocument();
-            // convert to richtext format
-            RTFEditorKit kit = new RTFEditorKit();
-            BufferedOutputStream out;
-            try {
-                out = new BufferedOutputStream(new FileOutputStream(fileName + ".doc"));
-                // save content to file
-                kit.write(out, doc, doc.getStartPosition().getOffset(), doc.getLength());
-                out.flush();
-                out.close();
-            } catch (Exception e) {
-                System.out.println("Err:" + e.toString());
+                if (abr.getNombreArchivo() == null) {
+                    guar.saveAs(jTextPane1, this);
+                } else {
+                    guar.save(jTextPane1, abr.getNombreArchivo());
+                }
             }
-
-        } else {
-            return;
         }
     }
 
@@ -113,9 +102,12 @@ public class vista extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
+        save = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel1.setText("FUENTE");
 
@@ -190,11 +182,11 @@ public class vista extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel1)
                 .addGap(18, 18, 18)
-                .addComponent(jcbFont, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(34, 34, 34)
+                .addComponent(jcbFont, 0, 271, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addComponent(jLabel2)
                 .addGap(18, 18, 18)
-                .addComponent(jcbSelectSize, 0, 220, Short.MAX_VALUE)
+                .addComponent(jcbSelectSize, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -213,6 +205,9 @@ public class vista extends javax.swing.JFrame {
                         .addComponent(btnSave, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
+
+        jPanel2.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel2.setForeground(new java.awt.Color(255, 255, 255));
 
         jScrollPane2.setViewportView(jTextPane1);
 
@@ -234,8 +229,21 @@ public class vista extends javax.swing.JFrame {
 
         jMenu1.setText("File");
 
-        jMenuItem1.setText("jMenuItem1");
+        jMenuItem1.setText("Nuevo archivo");
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
         jMenu1.add(jMenuItem1);
+
+        save.setText("Guardar como");
+        save.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveActionPerformed(evt);
+            }
+        });
+        jMenu1.add(save);
 
         jMenuBar1.add(jMenu1);
 
@@ -249,10 +257,7 @@ public class vista extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(0, 0, 0))
+            .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -267,28 +272,19 @@ public class vista extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jcbSelectSizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcbSelectSizeActionPerformed
-        // Select size of text
         String getSize = jcbSelectSize.getSelectedItem().toString();
         Font f = jTextPane1.getFont();
-// setting new size
         jTextPane1.setFont(new Font(f.getFontName(),
                 f.getStyle(), Integer.parseInt(getSize)));
     }//GEN-LAST:event_jcbSelectSizeActionPerformed
 
     private void jcbFontActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jcbFontActionPerformed
-        // Change font of text
         jTextPane1.setFont(new Font(jcbFont.getSelectedItem().toString(),
                 Font.PLAIN, Integer.parseInt(jcbSelectSize.getSelectedItem().toString())));
     }//GEN-LAST:event_jcbFontActionPerformed
 
     private void btnColorMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnColorMouseClicked
-        Color jColor = selectColor;
-        // open color dialog and select Color
-        if ((jColor = JColorChooser.showDialog(this, "Select color", jColor)) != null) {
-            selectColor = jColor;
-            // set text color
-            jTextPane1.setForeground(selectColor);
-        }
+        sc.seleccionarColor(selectColor, this, jTextPane1);
     }//GEN-LAST:event_btnColorMouseClicked
 
     private void btnColorMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnColorMouseEntered
@@ -300,34 +296,23 @@ public class vista extends javax.swing.JFrame {
     }//GEN-LAST:event_btnColorMouseExited
 
     private void btnSaveMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSaveMouseClicked
-        guardar();
+        if (abr.getNombreArchivo() == null) {
+            abr.setNombreArchivo(guar.saveAs(jTextPane1, this));
+        } else {
+            guar.save(jTextPane1, abr.getNombreArchivo());
+        }
     }//GEN-LAST:event_btnSaveMouseClicked
 
     private void btnOpenMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnOpenMouseClicked
-        JFileChooser file = new JFileChooser();
-        String fileName = "";
-// show open file dialog
-        if (file.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            fileName = file.getSelectedFile().getAbsolutePath();
-        } else {
-            return;
-        }
-// using richtext format
-        RTFEditorKit rtf = new RTFEditorKit();
         try {
-// load file into jTextPane
-            FileInputStream fi = new FileInputStream(fileName);
-            rtf.read(fi, jTextPane1.getDocument(), 0);
-            fi.close();
-        } catch (Exception e) {
-            System.out.println("err:" + e.toString());
+            abr.openFile(this, jTextPane1);
+        } catch (IOException | BadLocationException ex) {
+            Logger.getLogger(vista.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_btnOpenMouseClicked
 
     private void btnSaveMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnSaveMouseEntered
-
         btnSave.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(66, 116, 143)));
-
     }//GEN-LAST:event_btnSaveMouseEntered
 
     private void btnOpenMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnOpenMouseEntered
@@ -341,6 +326,18 @@ public class vista extends javax.swing.JFrame {
     private void btnOpenMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_btnOpenMouseExited
         btnOpen.setBorder(null);
     }//GEN-LAST:event_btnOpenMouseExited
+
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        jTextPane1.setText(null);
+        jcbFont.setSelectedIndex(0);
+        jcbSelectSize.setSelectedIndex(0);
+        jTextPane1.setFont(new Font("Agency FB", Font.PLAIN, Integer.parseInt(jcbSelectSize.getSelectedItem().toString())));
+        jTextPane1.setForeground(Color.BLACK);
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void saveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveActionPerformed
+        guar.saveAs(jTextPane1, this);
+    }//GEN-LAST:event_saveActionPerformed
 
     /**
      * @param args the command line arguments
@@ -393,5 +390,6 @@ public class vista extends javax.swing.JFrame {
     private javax.swing.JTextPane jTextPane1;
     private javax.swing.JComboBox<String> jcbFont;
     private javax.swing.JComboBox<String> jcbSelectSize;
+    private javax.swing.JMenuItem save;
     // End of variables declaration//GEN-END:variables
 }
