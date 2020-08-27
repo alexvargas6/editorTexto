@@ -22,7 +22,7 @@ public class guardar {
 
         JFileChooser file = new JFileChooser();
 
-        String fileName = "";
+        String fileName = null;
 
         if (file.showSaveDialog(vis) == JFileChooser.APPROVE_OPTION) {
 
@@ -53,7 +53,7 @@ public class guardar {
         RTFEditorKit kit = new RTFEditorKit();
         BufferedOutputStream out;
         try {
-            out = new BufferedOutputStream(new FileOutputStream(fileName));
+            out = new BufferedOutputStream(new FileOutputStream(fileName + ".doc"));
 
             kit.write(out, doc, doc.getStartPosition().getOffset(), doc.getLength());
             out.flush();
